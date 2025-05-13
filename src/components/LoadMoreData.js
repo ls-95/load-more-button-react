@@ -22,6 +22,6 @@ export default function LoadMoreData() {
 
   useEffect(() => {
     fetchProducts();
-  });
+  }, []);
   return <div className="container"></div>;
 }
