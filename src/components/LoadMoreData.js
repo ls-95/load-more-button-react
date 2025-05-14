@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useCallback } from "react";
 import "./styles.css";
 
 export default function LoadMoreData() {
@@ -6,8 +6,9 @@ export default function LoadMoreData() {
   const [products, setProducts] = useState([]);
   const [count, setCount] = useState(0);
   const [initialDataLoaded, setInitialDataLoaded] = useState(false);
+  const [disableButton, setDisableButton] = useState(false);
 
-  async function fetchProducts() {
+  const fetchProducts = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -24,19 +25,25 @@ export default function LoadMoreData() {
           } else {
             setProducts((prevData) => [...prevData, ...result.products]);
           }
+          console.log(result);
         }
       }
-
       setLoading(false);
     } catch (e) {
       setLoading(false);
       console.log(e);
     }
-  }
+  }, [count, initialDataLoaded]);
 
   useEffect(() => {
     fetchProducts();
-  }, [count]);
+  }, [fetchProducts]);
+
+  useEffect(() => {
+    if (products && products.length === 100) {
+      setDisableButton(true);
+    }
+  }, [products]);
 
   if (loading && products.length === 0) {
     return <div>Loading data! Please wait...</div>;
@@ -61,7 +68,10 @@ export default function LoadMoreData() {
       </div>
       {loading && <div>Loading more products...</div>}
       <div className="button-container">
-        <button onClick={() => setCount(count + 1)} disabled={loading}>
+        <button
+          onClick={() => setCount(count + 1)}
+          disabled={disableButton || loading}
+        >
           Load More Products
         </button>
       </div>
