@@ -5,23 +5,29 @@ export default function LoadMoreData() {
   const [loading, setLoading] = useState(false);
   const [products, setProducts] = useState([]);
   const [count, setCount] = useState(0);
+  const [initialDataLoaded, setInitialDataLoaded] = useState(false);
 
   async function fetchProducts() {
     try {
       setLoading(true);
-      const response = await fetch(
-        `https://dummyjson.com/products?limit=20&skip=${
-          count === 0 ? 0 : count * 20
-        }`
-      );
-      const result = await response.json();
 
-      if (result && result.products && result.products.length) {
-        setProducts(result.products);
-        setLoading(false);
+      if (!initialDataLoaded || count > 0) {
+        const response = await fetch(
+          `https://dummyjson.com/products?limit=20&skip=${count * 20}`
+        );
+        const result = await response.json();
+
+        if (result && result.products && result.products.length) {
+          if (count === 0) {
+            setProducts([...result.products]);
+            setInitialDataLoaded(true);
+          } else {
+            setProducts((prevData) => [...prevData, ...result.products]);
+          }
+        }
       }
 
-      console.log(result);
+      setLoading(false);
     } catch (e) {
       setLoading(false);
       console.log(e);
@@ -30,9 +36,9 @@ export default function LoadMoreData() {
 
   useEffect(() => {
     fetchProducts();
-  }, []);
+  }, [count]);
 
-  if (loading) {
+  if (loading && products.length === 0) {
     return <div>Loading data! Please wait...</div>;
   }
 
@@ -43,13 +49,21 @@ export default function LoadMoreData() {
           ? products.map((item) => (
               <div className="product" key={item.id}>
                 <img src={item.thumbnail} alt={item.title} />
-                <p>{item.title}</p>
+                <p>
+                  <strong>{item.title}</strong>
+                </p>
+                <p>
+                  {item.stock > 0 ? `${item.stock} in stock` : "Not in stock!"}
+                </p>
               </div>
             ))
           : null}
       </div>
+      {loading && <div>Loading more products...</div>}
       <div className="button-container">
-        <button>Load More Products</button>
+        <button onClick={() => setCount(count + 1)} disabled={loading}>
+          Load More Products
+        </button>
       </div>
     </div>
   );
